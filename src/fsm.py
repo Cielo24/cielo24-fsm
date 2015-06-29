@@ -5,25 +5,35 @@ from exceptions import *
 
 class FSM(object):
 
-    def __init__(self):
+    def __init__(self, dead_state_on=False):
+        # Set of all states
         self._states = set()
+        # Set of all transitions
         self._transitions = set()
+        # Current state
         self._current_state = None
+        # Initial state
         self._initial_state = None
+        # Set of all symbols
         self._alphabet = set()
+        # When True, any unknown symbol will result in a transition
+        # to the "dead" state from which there is no return
+        self._dead_state_on = dead_state_on
+        # Data structure for finding destination states
+        # (and corresponding callbacks) based on symbol and source state
         self._map = dict()
         '''
         Map is a two-level dict with the following structure:
         {
             symbol_1: {
-                src_1: dst_1,
-                src_2: dst_2,
-                src_3: dst_3
+                src_state_1: (dst_state_1, callback),
+                src_state_2: (dst_state_2, callback),
+                src_state_3: (dst_state_3, callback)
             },
             symbol_2: {
-                src_1: dst_3,
-                src_2: dst_2,
-                src_3: dst_1
+                src_state_1: (dst_state_3, callback),
+                src_state_2: (dst_state_2, callback),
+                src_state_3: (dst_state_1, callback)
             }
         }
         '''
@@ -36,11 +46,27 @@ class FSM(object):
     def initial_state(self):
         return self._initial_state
 
+    @initial_state.setter
+    def initial_state(self, value):
+        assert isinstance(value, State), 'Invalid type"'
+        assert value in self._states, 'State not in the set of known states'
+        self._initial_state = value
+
     def is_in_final_state(self):
         """
         :return: True if the current state is final, False otherwise.
         """
         return self._current_state.final
+
+    def is_in_dead_state(self):
+        """
+        :return: True if the current state is "dead" state. False, otherwise.
+        Throws an exception if dead_state_on is False.
+        """
+        if self._dead_state_on:
+            return self._current_state  # TODO
+        else:
+            raise DeadStateDisabled
 
     def step(self, symbol):
         """
@@ -50,6 +76,8 @@ class FSM(object):
         :return:
         """
         if symbol not in self._alphabet:
+            if self._dead_state_on:
+                pass  # TODO: transition into dead state
             raise UnknownSymbol
         dst_state = self._map[symbol][self._current_state]
         self._current_state = dst_state
@@ -61,8 +89,9 @@ class FSM(object):
         :return:
         """
         assert isinstance(state, State), 'Invalid argument type'
+        if state in self._states:
+            raise DuplicateState
         self._states.add(state)
-        # TODO: throw an error if duplicate state?
 
     def add_transition(self, transition):
         """

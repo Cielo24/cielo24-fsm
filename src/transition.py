@@ -3,41 +3,67 @@ from state import State
 
 class Transition(object):
 
-    def __init__(self, symbol, src, dst):
-        self._symbol = symbol
-        self._src = src
-        self._dst = dst
+    def __init__(self, symbol, src_state, dst_state, on_transition=None):
+        """
+        :param symbol: Symbol associated with this transition
+        :param src_state: The source state of this transition
+        :param dst_state: The destination state of this transition
+        :param on_transition: Callback to perform during this transition
+        :return:
+        """
+        # Define private fields
+        self._symbol = None
+        self._src_state = None
+        self._dst_state = None
+        self._on_transition = None
+        # Set properties
+        self.symbol = symbol
+        self.src_state = src_state
+        self.dst_state = dst_state
+        self.on_transition = on_transition
 
     @property
     def symbol(self):
         return self._symbol
 
     @property
-    def src(self):
-        return self._src
+    def src_state(self):
+        return self._src_state
 
     @property
-    def dst(self):
-        return self._dst
+    def dst_state(self):
+        return self._dst_state
+
+    @property
+    def on_transition(self):
+        return self._on_transition
 
     @symbol.setter
     def symbol(self, value):
         assert value is not None, 'Symbol cannot be None'
         self._symbol = value
 
-    @src.setter
-    def src(self, value):
+    @src_state.setter
+    def src_state(self, value):
         assert isinstance(value, State), 'Source must be a valid state'
-        self._src = value
+        self._src_state = value
 
-    @dst.setter
-    def dst(self, value):
+    @dst_state.setter
+    def dst_state(self, value):
         assert isinstance(value, State), 'Destination must be a valid state'
-        self._dst = value
+        self._dst_state = value
 
+    @on_transition.setter
+    def on_transition(self, value):
+        assert callable(value), 'On-Transition callback must be callable'
+        self._on_transition = value
+
+    # The below operators are overriden to support dictionary operations
     def __eq__(self, other):
         if isinstance(other, self.__class__):
-            return self.symbol == other.symbol and self.src == other.src and self.dst == other.dst
+            return self.symbol == other.symbol and \
+                   self.src_state == other.src_state and \
+                   self.dst_state == other.dst_state
         else:
             return False
 
@@ -45,4 +71,4 @@ class Transition(object):
         return not self.__eq__(other)
 
     def __hash__(self):
-        return hash('{}_{}_{}'.format(self.symbol, self.src.id, self.dst.id))
+        return hash('{}_{}_{}'.format(self.symbol, self.src_state.id, self.dst_state.id))

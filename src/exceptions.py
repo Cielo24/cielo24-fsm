@@ -26,3 +26,9 @@ class DisconnectedState(FSMException):
 
 class UnknownSymbol(FSMException):
     pass
+
+class DuplicateState(FSMException):
+    pass
+
+class DeadStateDisabled(FSMException):
+    pass
