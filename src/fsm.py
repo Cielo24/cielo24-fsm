@@ -23,11 +23,6 @@ class FSM(object):
         # Set of all symbols
         self._alphabet = set()
 
-        # When True, any unknown symbol will result in a transition
-        # to the "dead" state from which there is no return.
-        # This flag gets enabled when a dead state gets added to the FSM.
-        self._dead_state_on = False
-
         # When defined, this variable contains the dead state for this FSM.
         # Note that there will never be a transition that involves a dead state.
         # Hence, on_transition callback should be merged into on_enter/on_loop_enter callback of the dead state.
@@ -79,7 +74,7 @@ class FSM(object):
         """
         :return: True if this FSM contains a dead state. False, otherwise.
         """
-        return self._dead_state_on
+        return self._dead_state is not None
 
     def is_in_final_state(self):
         """
@@ -152,7 +147,6 @@ class FSM(object):
             # Throw exception if this FSM already has a dead state
             # (only one dead state is allowed per FSM)
             if not self.is_dead_state_on():
-                self._dead_state_on = True
                 self._dead_state = state
             else:
                 raise OnlyOneDeadStatePerFSMAllowed
@@ -191,10 +185,11 @@ class FSM(object):
         :return:
         """
         # If given state is dead state
-        # TODO: if i am already in dead state
         if state.dead:
-            self._dead_state = None
-            self._dead_state_on = False
+            if self._current_state.dead:
+                raise CannotRemoveStateThatIsCurrent
+            else:
+                self._dead_state = None
 
         # Remove state from set of states
         self._states.remove(state)
