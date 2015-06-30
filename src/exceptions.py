@@ -47,3 +47,6 @@ class OnlyOneDeadStatePerFSMAllowed(FSMException):
 
 class ValidationRequired(FSMException):
     pass
+
+class TransitionContainsUnknownState(FSMException):
+    pass

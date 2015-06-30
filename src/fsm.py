@@ -68,6 +68,7 @@ class FSM(object):
     def initial_state(self, value):
         assert isinstance(value, State), 'Invalid type'
         assert value in self._states, 'State not in the set of known states'
+        # Does not require dirty flag if it passed the asserts
         self._initial_state = value
         if self._execution_started:
             self._current_state = self._initial_state
@@ -109,7 +110,6 @@ class FSM(object):
             dst_state = self._dead_state
             on_transition_fn = None
             loop = True
-
         elif symbol not in self._alphabet:
             # If unknown symbol and dead state is enabled
             if self.is_dead_state_on():
@@ -119,7 +119,6 @@ class FSM(object):
                 loop = False
             else:
                 raise UnknownSymbol
-
         else:
             # Everything OK - retrieve dst_state from the map
             (dst_state, on_transition_fn) = self._map[symbol][self._current_state]
@@ -128,13 +127,10 @@ class FSM(object):
         # Perform on_exit callbacks
         self._perform_call(self._current_state.on_exit) if loop \
             else self._perform_call(self._current_state.on_loop_exit)
-
         # Perform on_transition callbacks
         self._perform_call(on_transition_fn)
-
-        # Set current state
+        # Set current state (transition)
         self._current_state = dst_state
-
         # Perform on_enter callbacks
         self._perform_call(self._current_state.on_enter) if loop \
             else self._perform_call(self._current_state.on_loop_enter)
@@ -146,11 +142,9 @@ class FSM(object):
         :return:
         """
         assert isinstance(state, State), 'Invalid argument type'
-
         # If such state already exists
         if state in self._states:
             raise DuplicateState
-
         # If given state is dead state
         if state.dead:
             # Throw exception if this FSM already has a dead state
@@ -158,11 +152,12 @@ class FSM(object):
             if not self.is_dead_state_on():
                 self._dead_state_on = True
                 self._dead_state = state
-                self._dirty = True
             else:
                 raise OnlyOneDeadStatePerFSMAllowed
         else:
             self._states.add(state)
+        # Set the dirty bit
+        self._dirty = True
 
     def add_transition(self, transition):
         """
@@ -174,9 +169,9 @@ class FSM(object):
         assert isinstance(transition, Transition), 'Invalid argument type'
         # Add transition to the set of transitions
         self._transitions.add(transition)
-        # Add states from the transition
-        self.add_state(transition.src_state)
-        self.add_state(transition.dst_state)
+        # Throw error if transition contains unknown states
+        if transition.src_state not in self._states or transition.dst_state not in self._states:
+            raise TransitionContainsUnknownState
         # Add symbol to the alphabet
         self._alphabet.add(transition.symbol)
         # Update the transition map
@@ -184,28 +179,32 @@ class FSM(object):
             # Create an entry for symbol if it does not already exist in the outer dict
             self._map[transition.symbol] = dict()
         # Insert src-dst pair
-        self._map[transition.symbol][transition.src_state] = transition.dst_state
+        self._map[transition.symbol][transition.src_state] = (transition.dst_state, transition.on_transition)
 
     def remove_state(self, state):
         """
         Removes the given state from the set of states, removes all corresponding transitions
-        from the set of transitions and the map.
+        from the set of transitions and from the map.
         :param state: State to remove
         :return:
         """
-        # Remove from set of states
+        # Remove state from set of states
         self._states.remove(state)
         # Remove from map
         for symbol in self._map.iterkeys():
             inner_dict = self._map[symbol]
-            for src, dst in inner_dict.iteritems():
+            for src, (dst, _) in inner_dict.iteritems():
                 if src == state or dst == state:
+                    # Remove transition from map
                     inner_dict.pop(src, None)
+                    # Remove transition from set of transitions
                     self._transitions.remove(Transition(symbol, src, dst))
             # Check if the inner dict is empty
             if len(inner_dict) == 0:
                 self._alphabet.remove(symbol)
                 self._map.pop(symbol, None)
+        # Set the dirty bit
+        self._dirty = True
 
     def remove_transition(self, transition):
         """
@@ -213,25 +212,35 @@ class FSM(object):
         :param transition: Transition to remove
         :return:
         """
-        # Remove from set of transitions
+        # Remove transition from set of transitions
         self._states.remove(transition)
-        # Remove from map
+        # Remove transition from map
         self._map[transition.symbol].pop(transition.src, None)
         # If this was the last remaining transition with the corresponding symbol
         if len(self._map[transition.symbol]) == 0:
             self._alphabet.remove(transition.symbol)
             self._map.pop(transition.symbol, None)
+        # Set the dirty bit
+        self._dirty = True
 
     def validate(self):
+        if self.is_dead_state_on():
+            self._validate_with_dead_state()
+        else:
+            self._validate_ideal()
+
+    def _validate_with_dead_state(self):
         """
-        Checks whether this FSM follows all of the constraints.
+        Checks whether this FSM follows some of the constraints for an ideal FSM.
+        (i.e. constraints required in the "dead" state mode)
         Throws exceptions to indicate the problem.
+        'Initial state must belong to the set of states' constraint is enforced in the setter.
         :return:
         """
-        # Set of states must not be empty
+        # Set of states must not be empty (otherwise there is no FSM)
         if len(self._states) == 0:
             raise EmptySetOfStates
-        # Set of transitions must not be empty
+        # Set of transitions must not be empty (otherwise there is no FSM)
         if len(self._transitions) == 0:
             raise EmptySetOfTransitions
         # There must be at least one final state
@@ -240,12 +249,6 @@ class FSM(object):
         # There must be an initial state
         if not self.initial_state:
             raise NoInitialState
-        # Initial state must belong to the set of states
-        if self.initial_state not in self._states:
-            raise InitialStateNotInSetOfStates
-        # The number of transitions must be equal to the number of states times the size of the alphabet
-        if len(self._transitions) != len(self._states) * len(self._alphabet):
-            raise MissingTransitions
         # No state should be disconnected from the rest of the states
         # i.e. for each state x there must be a transition from state y to x, s.t. x != y
         dst_dict = {state: False for state in self._states}
@@ -256,10 +259,24 @@ class FSM(object):
         if len([x for x in dst_dict.itervalues() if not x]) != 0:
             raise DisconnectedState
 
+    def _validate_ideal(self):
+        """
+        Checks whether this FSM follows all of the constraints for an ideal FSM.
+        Throws exceptions to indicate the problem.
+        'Initial state must belong to the set of states' constraint is enforced in the setter.
+        :return:
+        """
+        # "dead" state mode covers most of the ideal requirements
+        self._validate_with_dead_state()
+
+        # The number of transitions must be equal to the number of states times the size of the alphabet
+        if len(self._transitions) != len(self._states) * len(self._alphabet):
+            raise MissingTransitions
+
     def _perform_call(self, fn):
         """
         Helper function.
-        :param fn: Callable object that will be called (if it is actually callable)
+        :param fn: Callable object that need to be called (if it is actually callable)
         :return:
         """
         if callable(fn):
