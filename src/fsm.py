@@ -1,4 +1,6 @@
 # encoding: utf-8
+from __future__ import unicode_literals
+
 from state import State
 from transition import Transition
 from exceptions import *
@@ -188,6 +190,12 @@ class FSM(object):
         :param state: State to remove
         :return:
         """
+        # If given state is dead state
+        # TODO: if i am already in dead state
+        if state.dead:
+            self._dead_state = None
+            self._dead_state_on = False
+
         # Remove state from set of states
         self._states.remove(state)
         # Remove from map
