@@ -1,7 +1,7 @@
 # encoding: utf-8
 from __future__ import unicode_literals
 
-from state import State
+from state import State, DeadState
 
 class Transition(object):
 
@@ -59,13 +59,13 @@ class Transition(object):
     @src_state.setter
     def src_state(self, value):
         assert isinstance(value, State), 'Source must be a valid state'
-        assert not value.dead, 'Dead state cannot be part of a transition'
+        assert isinstance(value, DeadState), 'Dead state cannot be part of a transition'
         self._src_state = value
 
     @dst_state.setter
     def dst_state(self, value):
         assert isinstance(value, State), 'Destination must be a valid state'
-        assert not value.dead, 'Dead state cannot be part of a transition'
+        assert isinstance(value, DeadState), 'Dead state cannot be part of a transition'
         self._dst_state = value
 
     @on_transition.setter

@@ -1,7 +1,7 @@
 # encoding: utf-8
 from __future__ import unicode_literals
 
-from state import State
+from state import State, DeadState
 from transition import Transition
 from exceptions import *
 
@@ -86,7 +86,7 @@ class FSM(object):
         """
         :return: True if the current state is "dead" state. False, otherwise.
         """
-        return self.current_state.dead
+        return isinstance(self.current_state, DeadState)
 
     def step(self, symbol):
         """
@@ -108,6 +108,9 @@ class FSM(object):
             on_transition_fn = None
             loop = True
         elif symbol not in self._alphabet:
+            # assert TODO if unknown symbol
+            # transition into dead state if known symbol but undefined transition
+
             # If unknown symbol and dead state is enabled
             if self.is_dead_state_on():
                 # Transition into dead state
@@ -143,7 +146,8 @@ class FSM(object):
         if state in self._states:
             raise DuplicateState
         # If given state is dead state
-        if state.dead:
+        if isinstance(state, DeadState):
+            # TODO setter for dead state
             # Throw exception if this FSM already has a dead state
             # (only one dead state is allowed per FSM)
             if not self.is_dead_state_on():
@@ -184,9 +188,10 @@ class FSM(object):
         :param state: State to remove
         :return:
         """
+        # TODO check if state is being used
         # If given state is dead state
-        if state.dead:
-            if self._current_state.dead:
+        if isinstance(state, DeadState):
+            if self.is_in_dead_state():
                 raise CannotRemoveStateThatIsCurrent
             else:
                 self._dead_state = None
@@ -230,7 +235,7 @@ class FSM(object):
         if self.is_dead_state_on():
             self._validate_with_dead_state()
         else:
-            self._validate_ideal()
+            self._validate_deterministic()
 
     def _validate_with_dead_state(self):
         """
@@ -262,7 +267,7 @@ class FSM(object):
         if len([x for x in dst_dict.itervalues() if not x]) != 0:
             raise DisconnectedState
 
-    def _validate_ideal(self):
+    def _validate_deterministic(self):
         """
         Checks whether this FSM follows all of the constraints for an ideal FSM.
         Throws exceptions to indicate the problem.
