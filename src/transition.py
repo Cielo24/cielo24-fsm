@@ -1,7 +1,7 @@
 # encoding: utf-8
+from __future__ import unicode_literals
 
 from state import State
-from exceptions import SourceStateCannotBeDead
 
 class Transition(object):
 
@@ -10,23 +10,25 @@ class Transition(object):
         Transition diagram:
         (source_state) --------symbol-------> (destination_state)
 
-        Event diagram (corresponds to the above diagram):
+        Event diagram (regular transition):
         (on_exit) ---------(on_transition)-----> (on_enter)
 
-        Event diagram for a loop transition (where source_state == destination_state):
+        Event diagram (loop transition, i.e. source_state == destination_state):
         (on_loop_exit) ----(on_transition)-----> (on_loop_enter)
 
-        :param symbol: Symbol associated with this transition
-        :param src_state: The source state of this transition
-        :param dst_state: The destination state of this transition
-        :param on_transition: Callback to perform during this transition
+        :param symbol: Symbol associated with this transition.
+        :param src_state: The source state of this transition (cannot be dead state).
+        :param dst_state: The destination state of this transition (cannot be a dead state).
+        :param on_transition: Callback to perform during this transition.
         :return:
         """
+
         # Define private fields
         self._symbol = None
         self._src_state = None
         self._dst_state = None
         self._on_transition = None
+
         # Set properties
         self.symbol = symbol
         self.src_state = src_state
@@ -57,13 +59,13 @@ class Transition(object):
     @src_state.setter
     def src_state(self, value):
         assert isinstance(value, State), 'Source must be a valid state'
-        if value.dead:
-            raise SourceStateCannotBeDead
+        assert not value.dead, 'Dead state cannot be part of a transition'
         self._src_state = value
 
     @dst_state.setter
     def dst_state(self, value):
         assert isinstance(value, State), 'Destination must be a valid state'
+        assert not value.dead, 'Dead state cannot be part of a transition'
         self._dst_state = value
 
     @on_transition.setter
@@ -71,7 +73,7 @@ class Transition(object):
         assert callable(value), 'On-Transition callback must be callable'
         self._on_transition = value
 
-    # The below operators are overriden to support dictionary operations
+    # The below operators are overridden to support dictionary operations
     def __eq__(self, other):
         if isinstance(other, self.__class__):
             return self.symbol == other.symbol and \

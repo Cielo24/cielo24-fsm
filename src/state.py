@@ -7,16 +7,17 @@ class State(object):
     def __init__(self, id, final=False, on_enter=None, on_exit=None, on_loop_enter=None, on_loop_exit=None, dead=False):
         """
         Initializes a new state.
-        :param id: Id associated with this state. Each state in the FSM must have a unique Id
-        :param final: Indicates whether the state is final or not
-        :param dead: Indicates whether the state is dead (i.e. there is no way to return from this state)
+        :param id: Id associated with this state. Each state in the FSM must have a unique Id.
+        :param final: Indicates whether the state is final or not.
+        :param dead: Indicates whether the state is dead (i.e. there is no way to return from this state).
                      Only one dead state can exist per FSM.
-        :param on_enter: Callback to perform when entering this state during a transition from some other state
-        :param on_exit: Callback to perform when leaving this state during a transition to some other state
-        :param on_loop_enter: Callback to perform when entering this state during a transition from this same state
-        :param on_loop_exit: Callback to perform when leaving this state during a transition to this same state
+        :param on_enter: Callback to perform when entering this state during a transition from some other state.
+        :param on_exit: Callback to perform when leaving this state during a transition to some other state.
+        :param on_loop_enter: Callback to perform when entering this state during a transition from this same state.
+        :param on_loop_exit: Callback to perform when leaving this state during a transition to this same state.
         :return:
         """
+
         # Define private fields
         self._id = None
         self._final = None
@@ -25,6 +26,7 @@ class State(object):
         self._on_exit = None
         self._on_loop_enter = None
         self._on_loop_exit = None
+
         # Set properties
         self.id = id
         self.final = final
@@ -101,7 +103,7 @@ class State(object):
         assert callable(value), 'On-Loop-Exit callback must be callable'
         self._on_loop_exit = value
 
-    # The below operators are overriden to support dictionary operations
+    # The below operators are overridden to support dictionary operations
     def __eq__(self, other):
         if isinstance(other, self.__class__):
             return self.id == other.id

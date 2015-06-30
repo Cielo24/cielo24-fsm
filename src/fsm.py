@@ -26,13 +26,10 @@ class FSM(object):
         # This flag gets enabled when a dead state gets added to the FSM.
         self._dead_state_on = False
 
-        # When defined, contains the dead state for this FSM.
-        # When dead state is defined, default dead transition must be defined as well.
+        # When defined, this variable contains the dead state for this FSM.
+        # Note that there will never be a transition that involves a dead state.
+        # Hence, on_transition callback should be merged into on_enter/on_loop_enter callback of the dead state.
         self._dead_state = None
-
-        # Transition to dead state that gets taken if no custom transition into dead state is defined.
-        # The TODO
-        self._default_dead_transition = None
 
         # Indicates whether this FSM needs validation before next step
         self._dirty = False
@@ -67,10 +64,6 @@ class FSM(object):
     def initial_state(self):
         return self._initial_state
 
-    @property
-    def default_dead_transition(self):
-        return self._default_dead_transition
-
     @initial_state.setter
     def initial_state(self, value):
         assert isinstance(value, State), 'Invalid type'
@@ -78,11 +71,6 @@ class FSM(object):
         self._initial_state = value
         if self._execution_started:
             self._current_state = self._initial_state
-
-    @default_dead_transition.setter
-    def default_dead_transition(self, value):
-        assert isinstance(value, Transition), 'Invalid argument type'
-        self._default_dead_transition = value
 
     def is_dead_state_on(self):
         """
@@ -115,20 +103,23 @@ class FSM(object):
         else:
             self._execution_started = True
 
-        # Indicates whether to invoke the "loop" versions of the callbacks
+        # "loop" variable indicates whether to invoke the on_loop_* versions of the callbacks
         if self.is_dead_state_on() and self.is_in_dead_state():
             # Stay in dead state no matter what (loop)
-            (dst_state, on_transition_fn) = self._dead_state, self._default_dead_transition
             dst_state = self._dead_state
+            on_transition_fn = None
             loop = True
+
         elif symbol not in self._alphabet:
             # If unknown symbol and dead state is enabled
             if self.is_dead_state_on():
                 # Transition into dead state
-                (dst_state, on_transition_fn) = self._dead_state, self._default_dead_transition
+                dst_state = self._dead_state
+                on_transition_fn = None
                 loop = False
             else:
                 raise UnknownSymbol
+
         else:
             # Everything OK - retrieve dst_state from the map
             (dst_state, on_transition_fn) = self._map[symbol][self._current_state]
@@ -137,36 +128,41 @@ class FSM(object):
         # Perform on_exit callbacks
         self._perform_call(self._current_state.on_exit) if loop \
             else self._perform_call(self._current_state.on_loop_exit)
+
         # Perform on_transition callbacks
         self._perform_call(on_transition_fn)
+
         # Set current state
         self._current_state = dst_state
+
         # Perform on_enter callbacks
         self._perform_call(self._current_state.on_enter) if loop \
             else self._perform_call(self._current_state.on_loop_enter)
 
     def add_state(self, state):
         """
-        Adds the given state to the FSM. New state must have a unique id, otherwise this function has no effect.
-        :param state: State to be added to this FSM
+        Adds the given state to the FSM. New state must have a unique id, otherwise an error is thrown.
+        :param state: State to be added to this FSM.
         :return:
         """
         assert isinstance(state, State), 'Invalid argument type'
+
         # If such state already exists
         if state in self._states:
             raise DuplicateState
+
         # If given state is dead state
         if state.dead:
             # Throw exception if this FSM already has a dead state
             # (only one dead state is allowed per FSM)
-            if self.is_dead_state_on():
-                raise OnlyOneDeadStatePerFSMAllowed
-            else:
+            if not self.is_dead_state_on():
                 self._dead_state_on = True
                 self._dead_state = state
                 self._dirty = True
-
-        self._states.add(state)
+            else:
+                raise OnlyOneDeadStatePerFSMAllowed
+        else:
+            self._states.add(state)
 
     def add_transition(self, transition):
         """
