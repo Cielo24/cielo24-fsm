@@ -32,3 +32,18 @@ class DuplicateState(FSMException):
 
 class DeadStateDisabled(FSMException):
     pass
+
+class ImpossibleToDisableDeadState(FSMException):
+    pass
+
+class OnExitNoSupportedInDeadState(FSMException):
+    pass
+
+class SourceStateCannotBeDead(FSMException):
+    pass
+
+class OnlyOneDeadStatePerFSMAllowed(FSMException):
+    pass
+
+class ValidationRequired(FSMException):
+    pass

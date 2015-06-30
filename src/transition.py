@@ -1,10 +1,21 @@
 # encoding: utf-8
+
 from state import State
+from exceptions import SourceStateCannotBeDead
 
 class Transition(object):
 
     def __init__(self, symbol, src_state, dst_state, on_transition=None):
         """
+        Transition diagram:
+        (source_state) --------symbol-------> (destination_state)
+
+        Event diagram (corresponds to the above diagram):
+        (on_exit) ---------(on_transition)-----> (on_enter)
+
+        Event diagram for a loop transition (where source_state == destination_state):
+        (on_loop_exit) ----(on_transition)-----> (on_loop_enter)
+
         :param symbol: Symbol associated with this transition
         :param src_state: The source state of this transition
         :param dst_state: The destination state of this transition
@@ -46,6 +57,8 @@ class Transition(object):
     @src_state.setter
     def src_state(self, value):
         assert isinstance(value, State), 'Source must be a valid state'
+        if value.dead:
+            raise SourceStateCannotBeDead
         self._src_state = value
 
     @dst_state.setter
