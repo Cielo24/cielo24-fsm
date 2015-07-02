@@ -108,6 +108,8 @@ class DeadState(State):
         """
         Initializes a new dead state. Dead state is a state from which there is no return.
         It does not support on_exit callbacks for that reason. Only one dead state can exist per FSM.
+        Because no transition can lead to or originate from a dead state, on_transition callback should be
+        made part of on_enter and on_loop_enter callbacks.
 
         :param id: Id associated with this state. Each state in the FSM must have a unique Id.
         :param final: Indicates whether the state is final or not.

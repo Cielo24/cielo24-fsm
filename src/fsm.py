@@ -31,9 +31,6 @@ class FSM(object):
         # Indicates whether this FSM needs validation before next step
         self._dirty = False
 
-        # Indicates whether step() has been called at least once
-        self._execution_started = False
-
         # Data structure for finding destination states
         # (and corresponding callbacks) based on symbol and source state
         self._map = dict()
@@ -61,14 +58,25 @@ class FSM(object):
     def initial_state(self):
         return self._initial_state
 
+    @property
+    def dead_state(self):
+        return self._dead_state
+
     @initial_state.setter
     def initial_state(self, value):
-        assert isinstance(value, State), 'Invalid type'
+        assert isinstance(value, State), 'Invalid argument type'
         assert value in self._states, 'State not in the set of known states'
         # Does not require dirty flag if it passed the asserts
         self._initial_state = value
-        if self._execution_started:
-            self._current_state = self._initial_state
+
+    @dead_state.setter
+    def dead_state(self, value):
+        assert isinstance(value, DeadState), 'Invalid argument type'
+        # If FSM is in dead state
+        if self.is_dead_state_on() and self.is_in_dead_state():
+            raise CannotModifyStateThatIsCurrent
+        else:
+            self._dead_state = value
 
     def is_dead_state_on(self):
         """
@@ -95,32 +103,27 @@ class FSM(object):
         :param symbol: Symbol to follow
         :return:
         """
+        assert symbol in self._alphabet, 'Unknown symbol'
         # Throw exception if FSM has not been validated (dirty)
         if self._dirty:
             raise ValidationRequired
-        else:
-            self._execution_started = True
+        # Set current state to initial state if current state is undefined
+        if self._current_state is None:
+            self._current_state = self._initial_state
 
         # "loop" variable indicates whether to invoke the on_loop_* versions of the callbacks
+        # If already in dead state - stay in dead state (loop)
         if self.is_dead_state_on() and self.is_in_dead_state():
-            # Stay in dead state no matter what (loop)
             dst_state = self._dead_state
             on_transition_fn = None
             loop = True
-        elif symbol not in self._alphabet:
-            # assert TODO if unknown symbol
-            # transition into dead state if known symbol but undefined transition
-
-            # If unknown symbol and dead state is enabled
-            if self.is_dead_state_on():
-                # Transition into dead state
-                dst_state = self._dead_state
-                on_transition_fn = None
-                loop = False
-            else:
-                raise UnknownSymbol
+        # If dead state is defined and transition not defined - transition into dead state
+        elif self.is_dead_state_on() and self._current_state not in self._map[symbol]:
+            dst_state = self._dead_state
+            on_transition_fn = None
+            loop = False
+        # All other cases - retrieve dst_state from the map
         else:
-            # Everything OK - retrieve dst_state from the map
             (dst_state, on_transition_fn) = self._map[symbol][self._current_state]
             loop = True if self._current_state == dst_state else False
 
@@ -141,19 +144,12 @@ class FSM(object):
         :param state: State to be added to this FSM.
         :return:
         """
+        # State must be 'regular' state
         assert isinstance(state, State), 'Invalid argument type'
+        assert not isinstance(state, DeadState), 'Invalid argument type'
         # If such state already exists
         if state in self._states:
             raise DuplicateState
-        # If given state is dead state
-        if isinstance(state, DeadState):
-            # TODO setter for dead state
-            # Throw exception if this FSM already has a dead state
-            # (only one dead state is allowed per FSM)
-            if not self.is_dead_state_on():
-                self._dead_state = state
-            else:
-                raise OnlyOneDeadStatePerFSMAllowed
         else:
             self._states.add(state)
         # Set the dirty bit
@@ -188,13 +184,13 @@ class FSM(object):
         :param state: State to remove
         :return:
         """
-        # TODO check if state is being used
-        # If given state is dead state
-        if isinstance(state, DeadState):
-            if self.is_in_dead_state():
-                raise CannotRemoveStateThatIsCurrent
-            else:
-                self._dead_state = None
+        # State must be 'regular' state
+        assert isinstance(state, State), 'Invalid argument type'
+        assert not isinstance(state, DeadState), 'Invalid argument type'
+
+        # We cannot remove state that is current
+        if state == self.current_state:
+            raise CannotModifyStateThatIsCurrent
 
         # Remove state from set of states
         self._states.remove(state)
@@ -220,6 +216,7 @@ class FSM(object):
         :param transition: Transition to remove
         :return:
         """
+        assert isinstance(transition, Transition), 'Invalid argument type'
         # Remove transition from set of transitions
         self._states.remove(transition)
         # Remove transition from map

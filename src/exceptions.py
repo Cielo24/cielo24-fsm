@@ -40,5 +40,5 @@ class ValidationRequired(FSMException):
 class TransitionContainsUnknownState(FSMException):
     pass
 
-class CannotRemoveStateThatIsCurrent(FSMException):
+class CannotModifyStateThatIsCurrent(FSMException):
     pass
