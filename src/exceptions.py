@@ -1,5 +1,4 @@
 # encoding: utf-8
-from __future__ import unicode_literals
 
 class FSMException(Exception):
     pass
@@ -28,7 +27,10 @@ class UnknownSymbol(FSMException):
 class DuplicateState(FSMException):
     pass
 
-class OnExitNoSupportedInDeadState(FSMException):
+class DuplicateTransition(FSMException):
+    pass
+
+class OnExitNotSupportedInDeadState(FSMException):
     pass
 
 class OnlyOneDeadStatePerFSMAllowed(FSMException):
@@ -41,4 +43,7 @@ class TransitionContainsUnknownState(FSMException):
     pass
 
 class CannotModifyStateThatIsCurrent(FSMException):
+    pass
+
+class StateCannotHaveSameSymbolTransitions(FSMException):
     pass

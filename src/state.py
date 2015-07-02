@@ -1,7 +1,6 @@
 # encoding: utf-8
-from __future__ import unicode_literals
 
-from exceptions import OnExitNoSupportedInDeadState
+from exceptions import OnExitNotSupportedInDeadState
 
 class State(object):
 
@@ -126,8 +125,8 @@ class DeadState(State):
 
     @property
     def on_exit(self):
-        raise OnExitNoSupportedInDeadState
+        raise OnExitNotSupportedInDeadState
 
     @on_exit.setter
     def on_exit(self, value):
-        raise OnExitNoSupportedInDeadState
+        raise OnExitNotSupportedInDeadState

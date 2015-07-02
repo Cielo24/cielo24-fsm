@@ -1,5 +1,4 @@
 # encoding: utf-8
-from __future__ import unicode_literals
 
 from state import State, DeadState
 from transition import Transition
@@ -163,11 +162,18 @@ class FSM(object):
         :return:
         """
         assert isinstance(transition, Transition), 'Invalid argument type'
-        # Add transition to the set of transitions
-        self._transitions.add(transition)
-        # Throw error if transition contains unknown states
+        # Throw error if transition is a duplicate
+        if transition in self._transitions:
+            raise DuplicateTransition
+        # Throw error if transition contains an unknown state
         if transition.src_state not in self._states or transition.dst_state not in self._states:
             raise TransitionContainsUnknownState
+        # Throw error if transition results in an NFA behavior
+        if transition.symbol in self._map.keys() and transition.src_state in self._map[transition.symbol].keys():
+            raise StateCannotHaveSameSymbolTransitions
+
+        # Add transition to the set of transitions
+        self._transitions.add(transition)
         # Add symbol to the alphabet
         self._alphabet.add(transition.symbol)
         # Update the transition map
