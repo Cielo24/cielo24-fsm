@@ -1,6 +1,6 @@
 # encoding: utf-8
 
-from exceptions import OnExitNotSupportedInDeadState
+from fsm_exceptions import OnExitNotSupportedInDeadState
 
 class State(object):
 

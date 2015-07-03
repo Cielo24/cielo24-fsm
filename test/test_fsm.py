@@ -4,7 +4,7 @@ from unittest import TestCase
 from fsm import FSM
 from state import State, DeadState
 from transition import Transition
-from exceptions import *
+from fsm_exceptions import *
 
 
 class TestFSM(TestCase):

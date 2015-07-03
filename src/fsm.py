@@ -2,7 +2,7 @@
 
 from state import State, DeadState
 from transition import Transition
-from exceptions import *
+from fsm_exceptions import *
 
 class FSM(object):
 
