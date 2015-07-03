@@ -141,6 +141,8 @@ class TestFSM(TestCase):
 
     # Regular add
     def test_add_transition(self):
+        self.fsm.add_state(self.q0)
+        self.fsm.add_state(self.q2)
         self.fsm.add_transition(self.q0_a)
         self.assertIn(self.q0_a, self.fsm._transitions)
         self.assertIn(self.q0_a.symbol, self.fsm._alphabet)

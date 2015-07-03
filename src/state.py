@@ -69,22 +69,22 @@ class State(object):
 
     @on_enter.setter
     def on_enter(self, value):
-        assert callable(value), 'On-Enter callback must be callable'
+        assert value is None or callable(value), 'On-Enter callback must be callable or None'
         self._on_enter = value
 
     @on_exit.setter
     def on_exit(self, value):
-        assert callable(value), 'On-Exit callback must be callable'
+        assert value is None or callable(value), 'On-Exit callback must be callable or None'
         self._on_exit = value
 
     @on_loop_enter.setter
     def on_loop_enter(self, value):
-        assert callable(value), 'On-Loop-Enter callback must be callable'
+        assert value is None or callable(value), 'On-Loop-Enter callback must be callable or None'
         self._on_loop_enter = value
 
     @on_loop_exit.setter
     def on_loop_exit(self, value):
-        assert callable(value), 'On-Loop-Exit callback must be callable'
+        assert value is None or callable(value), 'On-Loop-Exit callback must be callable or None'
         self._on_loop_exit = value
 
     # The below operators are overridden to support dictionary operations

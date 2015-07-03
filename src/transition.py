@@ -69,7 +69,7 @@ class Transition(object):
 
     @on_transition.setter
     def on_transition(self, value):
-        assert callable(value), 'On-Transition callback must be callable'
+        assert value is None or callable(value), 'On-Transition callback must be callable or None'
         self._on_transition = value
 
     # The below operators are overridden to support dictionary operations
