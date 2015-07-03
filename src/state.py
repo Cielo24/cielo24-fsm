@@ -129,4 +129,6 @@ class DeadState(State):
 
     @on_exit.setter
     def on_exit(self, value):
-        raise OnExitNotSupportedInDeadState
+        # We need the below check because the parent class (State) sets on_exit to None
+        if value:
+            raise OnExitNotSupportedInDeadState

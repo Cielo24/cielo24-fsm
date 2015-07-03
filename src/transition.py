@@ -58,13 +58,13 @@ class Transition(object):
     @src_state.setter
     def src_state(self, value):
         assert isinstance(value, State), 'Source must be a valid state'
-        assert isinstance(value, DeadState), 'Dead state cannot be part of a transition'
+        assert not isinstance(value, DeadState), 'Dead state cannot be part of a transition'
         self._src_state = value
 
     @dst_state.setter
     def dst_state(self, value):
         assert isinstance(value, State), 'Destination must be a valid state'
-        assert isinstance(value, DeadState), 'Dead state cannot be part of a transition'
+        assert not isinstance(value, DeadState), 'Dead state cannot be part of a transition'
         self._dst_state = value
 
     @on_transition.setter
