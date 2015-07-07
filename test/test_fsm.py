@@ -70,15 +70,21 @@ class TestFSM(TestCase):
         # Number
         self.number = 0
 
-    def _populate_fsm(self, states=True, transitions=True):
+    def _populate_fsm(self, states=True, transitions=True, initial=True, dead=True):
         # States
         if states:
             self.fsm.add_state(self.q0)
             self.fsm.add_state(self.q1)
             self.fsm.add_state(self.q2)
             self.fsm.add_state(self.q3)
-            self.fsm.dead_state = self.ds
+
+        # Initial state
+        if initial:
             self.fsm.initial_state = self.q0
+
+        # Dead state
+        if dead:
+            self.fsm.dead_state = self.ds
 
         # Transitions
         if transitions:
@@ -97,6 +103,10 @@ class TestFSM(TestCase):
             self.fsm.add_transition(self.q3_a)
             # self.fsm.add_transition(self.q3_b)
             self.fsm.add_transition(self.q3_c)
+
+        # Validate
+        if states and transitions and initial and dead:
+            self.fsm.validate()
 
     def _fake_callback(self, value):
         # fake callback function to be used to test callbacks in the FSM
@@ -239,7 +249,7 @@ class TestFSM(TestCase):
         # if no transitions with that symbol are left
         self._populate_fsm()
         self.fsm.remove_state(self.q1)
-        self.assertEqual(len(self.fsm._transitions), 4)
+        self.assertEqual(len(self.fsm._transitions), 5)
         self.fsm.remove_state(self.q3)
         self.assertEqual(len(self.fsm._transitions), 2)
         self.assertNotIn('b', self.fsm._alphabet)
@@ -256,15 +266,121 @@ class TestFSM(TestCase):
 
     # Regular remove
     def test_remove_transition(self):
-        pass
+        self._populate_fsm()
+        self.fsm.remove_transition(self.q0_a)
+        self.assertNotIn(self.q0_a, self.fsm._transitions)
+        self.assertTrue(self.fsm._dirty)
+
+    # Invalid type remove
+    def test_remove_transition_invalid_type(self):
+        self._populate_fsm()
+        with self.assertRaises(AssertionError):
+            self.fsm.remove_transition(self.q0)
+        with self.assertRaises(AssertionError):
+            self.fsm.remove_transition(None)
+
+    # Symbol remove
+    def test_remove_transition_symbol(self):
+        # Verify that the symbol gets removed from the map
+        # if no transitions with that symbol are left
+        self._populate_fsm()
+        self.fsm.remove_transition(self.q0_b)
+        self.fsm.remove_transition(self.q1_b)
+        self.fsm.remove_transition(self.q2_b)
+        self.assertNotIn(self.q0_b, self.fsm._transitions)
+        self.assertNotIn(self.q1_b, self.fsm._transitions)
+        self.assertNotIn(self.q2_b, self.fsm._transitions)
+        self.assertNotIn('b', self.fsm._alphabet)
+        self.assertNotIn('b', self.fsm._map)
+        self.assertTrue(self.fsm._dirty)
 
     """
     SET INITIAL/DEAD STATE TESTS
     """
 
+    # Invalid type set
+    def test_set_initial_invalid_type(self):
+        self._populate_fsm(initial=False)
+        with self.assertRaises(AssertionError):
+            self.fsm.initial_state = self.ds
+        with self.assertRaises(AssertionError):
+            self.fsm.initial_state = None
+        # Set unknown state as initial
+        with self.assertRaises(AssertionError):
+            self.fsm.initial_state = State('unknown_state')
+        # Should not raise any exceptions
+        self.fsm.initial_state = self.q0
+        self.fsm.validate()
+
+    # Invalid type set
+    def test_set_dead_invalid_type(self):
+        self._populate_fsm(dead=False)
+        with self.assertRaises(AssertionError):
+            self.fsm.dead_state = self.q0
+        # Should not raise any exceptions
+        self.fsm.dead_state = self.ds
+        self.fsm.validate()
+        self.fsm.dead_state = None
+
+    # Set dead state while in dead state
+    def test_set_dead_in_dead(self):
+        self._populate_fsm()
+        self.fsm.step('b')
+        self.fsm.step('c')
+        # FSM should be in dead state now
+        with self.assertRaises(CannotModifyStateThatIsCurrent):
+            self.fsm.dead_state = DeadState('new_dead_state')
+
     """
     VALIDATE TESTS
     """
+
+    def test_validate_empty_set_of_states(self):
+        with self.assertRaises(EmptySetOfStates):
+            self.fsm.validate()
+
+    def test_validate_empty_set_of_transitions(self):
+        self._populate_fsm(transitions=False)
+        with self.assertRaises(EmptySetOfTransitions):
+            self.fsm.validate()
+
+    def test_validate_no_final_state(self):
+        self.fsm.add_state(self.q0)
+        self.fsm.add_state(self.q2)
+        self.fsm.initial_state = self.q0
+        self.fsm.add_transition(self.q0_a)
+        with self.assertRaises(NoFinalState):
+            self.fsm.validate()
+
+    def test_validate_no_initial_state(self):
+        self.fsm.add_state(self.q0)
+        self.fsm.add_state(self.q1)
+        self.fsm.add_transition(self.q0_b)
+        with self.assertRaises(NoInitialState):
+            self.fsm.validate()
+
+    def test_validate_unreachable_state(self):
+        self.fsm.add_state(self.q0)
+        self.fsm.add_state(self.q1)
+        self.fsm.initial_state = self.q0
+        self.fsm.add_transition(self.q0_c)
+        with self.assertRaises(UnreachableStateDetected):
+            self.fsm.validate()
+
+    def test_validate_deterministic(self):
+        self._populate_fsm(dead=False)
+        with self.assertRaises(MissingTransitions):
+            self.fsm.validate()
+        # Now let's add missing states and revalidate
+        self.q1_c = Transition('c', self.q1, self.q0)
+        self.q2_a = Transition('a', self.q2, self.q0)
+        self.q3_b = Transition('b', self.q3, self.q3)
+        self.fsm.add_transition(self.q1_c)
+        self.fsm.add_transition(self.q2_a)
+        self.fsm.add_transition(self.q3_b)
+        self.fsm.validate()
+
+
 
     """
     STEP TESTS

@@ -63,6 +63,7 @@ class FSM(object):
 
     @initial_state.setter
     def initial_state(self, value):
+        # Only State objects are accepted
         assert isinstance(value, State), 'Invalid argument type'
         assert value in self._states, 'State not in the set of known states'
         # Does not require dirty flag if it passed the asserts
@@ -70,10 +71,15 @@ class FSM(object):
 
     @dead_state.setter
     def dead_state(self, value):
-        assert isinstance(value, DeadState), 'Invalid argument type'
+        # Only DeadState or None objects are accepted
+        assert value is None or isinstance(value, DeadState), 'Invalid argument type'
         # If FSM is in dead state
         if self.is_dead_state_on() and self.is_in_dead_state():
             raise CannotModifyStateThatIsCurrent
+        elif value is None:
+            self._dead_state = value
+            # Need to revalidate FSM
+            self._dirty = True
         else:
             self._dead_state = value
 
@@ -201,9 +207,10 @@ class FSM(object):
         # Remove state from set of states
         self._states.remove(state)
         # Remove from map
-        for symbol in self._map.iterkeys():
+        for symbol in self._map.keys():
             inner_dict = self._map[symbol]
-            for src, (dst, _) in inner_dict.iteritems():
+            for src in inner_dict.keys():
+                (dst, _) = inner_dict[src]
                 if src == state or dst == state:
                     # Remove transition from map
                     inner_dict.pop(src, None)
@@ -224,9 +231,9 @@ class FSM(object):
         """
         assert isinstance(transition, Transition), 'Invalid argument type'
         # Remove transition from set of transitions
-        self._states.remove(transition)
+        self._transitions.remove(transition)
         # Remove transition from map
-        self._map[transition.symbol].pop(transition.src, None)
+        self._map[transition.symbol].pop(transition.src_state, None)
         # If this was the last remaining transition with the corresponding symbol
         if len(self._map[transition.symbol]) == 0:
             self._alphabet.remove(transition.symbol)
@@ -239,6 +246,8 @@ class FSM(object):
             self._validate_with_dead_state()
         else:
             self._validate_deterministic()
+        # If we reached this point, then no error were found
+        self._dirty = False
 
     def _validate_with_dead_state(self):
         """
@@ -255,20 +264,27 @@ class FSM(object):
         if len(self._transitions) == 0:
             raise EmptySetOfTransitions
         # There must be at least one final state
-        if len([state for state in self._states if state.final]):
+        if len([state for state in self._states if state.final]) == 0:
             raise NoFinalState
         # There must be an initial state
         if not self.initial_state:
             raise NoInitialState
-        # No state should be disconnected from the rest of the states
-        # i.e. for each state x there must be a transition from state y to x, s.t. x != y
-        dst_dict = {state: False for state in self._states}
-        for inner_dict in self._map.itervalues():
-            for src, dst in inner_dict.iteritems():
-                if src != dst:
-                    dst_dict[dst] = True
-        if len([x for x in dst_dict.itervalues() if not x]) != 0:
-            raise DisconnectedState
+        # Starting in initial state, all nodes should be reachable
+        states_not_visited = [state for state in self._states
+                              if state != self.initial_state]
+        transition_stack = [transition for transition in self._transitions
+                            if transition.src_state != self.initial_state]
+        while transition_stack and states_not_visited:
+            transition = transition_stack.pop()
+            dst_state = transition.dst_state
+            if dst_state in states_not_visited:
+                # Remove from not visited states
+                states_not_visited.remove(dst_state)
+                # Add its transitions to the stack
+                transition_stack.extend([transition for transition in self._transitions
+                                         if transition.src_state == dst_state])
+        if states_not_visited:
+            raise UnreachableStateDetected
 
     def _validate_deterministic(self):
         """

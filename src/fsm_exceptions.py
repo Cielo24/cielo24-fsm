@@ -18,7 +18,7 @@ class NoInitialState(FSMException):
 class MissingTransitions(FSMException):
     pass
 
-class DisconnectedState(FSMException):
+class UnreachableStateDetected(FSMException):
     pass
 
 class UnknownSymbol(FSMException):
