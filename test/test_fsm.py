@@ -331,6 +331,11 @@ class TestFSM(TestCase):
         with self.assertRaises(CannotModifyStateThatIsCurrent):
             self.fsm.dead_state = DeadState('new_dead_state')
 
+    # Get current state before setting initial
+    def test_get_current_no_initial(self):
+        self._populate_fsm(initial=False)
+        self.assertIsNone(self.fsm.current_state)
+
     """
     VALIDATE TESTS
     """
@@ -393,16 +398,19 @@ class TestFSM(TestCase):
         self.fsm.step('b')
         my_step_stack.extend(['q0_on_exit', 'q0_b', 'q1_on_enter'])
         self.assertEqual(self.q1, self.fsm.current_state)
+        self.assertTrue(self.fsm.is_in_final_state())
 
         # Loop into q1:
         self.fsm.step('a')
         my_step_stack.extend(['q1_on_loop_exit', 'q1_a', 'q1_on_loop_enter'])
         self.assertEqual(self.q1, self.fsm.current_state)
+        self.assertTrue(self.fsm.is_in_final_state())
 
         # Transition into q3
         self.fsm.step('b')
         my_step_stack.extend(['q1_on_exit', 'q1_b', 'q3_on_enter'])
         self.assertEqual(self.q3, self.fsm.current_state)
+        self.assertTrue(self.fsm.is_in_final_state())
 
         # Transition into q2
         self.fsm.step('a')
@@ -413,6 +421,7 @@ class TestFSM(TestCase):
         self.fsm.step('c')
         my_step_stack.extend(['q2_on_exit', 'q2_c', 'q3_on_enter'])
         self.assertEqual(self.q3, self.fsm.current_state)
+        self.assertTrue(self.fsm.is_in_final_state())
 
         # Transition into dead
         self.fsm.step('b')
@@ -440,3 +449,9 @@ class TestFSM(TestCase):
         for symbol in ['a', 'b', 'c']:
             self.fsm.step(symbol)
             self.assertTrue(self.fsm.is_in_dead_state())
+
+    def test_step_dirty_bit(self):
+        self._populate_fsm()
+        self.fsm.add_state(State('new_state'))
+        with self.assertRaises(ValidationRequired):
+            self.fsm.step('a')

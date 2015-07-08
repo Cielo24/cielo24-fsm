@@ -113,7 +113,7 @@ class FSM(object):
         :param symbol: Symbol to follow
         :return:
         """
-        assert symbol in self._alphabet, 'Unknown symbol'
+        assert symbol in self._alphabet, 'Unknown symbol: {}'.format(symbol)
         # Throw exception if FSM has not been validated (dirty)
         if self._dirty:
             raise ValidationRequired
