@@ -51,7 +51,12 @@ class FSM(object):
 
     @property
     def current_state(self):
-        return self._current_state
+        if self._current_state:
+            return self._current_state
+        elif self._initial_state:
+            return self._initial_state
+        else:
+            return None
 
     @property
     def initial_state(self):
@@ -133,15 +138,15 @@ class FSM(object):
             loop = True if self._current_state == dst_state else False
 
         # Perform on_exit callbacks
-        self._perform_call(self._current_state.on_exit) if loop \
-            else self._perform_call(self._current_state.on_loop_exit)
+        self._perform_call(self._current_state.on_loop_exit) if loop \
+            else self._perform_call(self._current_state.on_exit)
         # Perform on_transition callbacks
         self._perform_call(on_transition_fn)
         # Set current state (transition)
         self._current_state = dst_state
         # Perform on_enter callbacks
-        self._perform_call(self._current_state.on_enter) if loop \
-            else self._perform_call(self._current_state.on_loop_enter)
+        self._perform_call(self._current_state.on_loop_enter) if loop \
+            else self._perform_call(self._current_state.on_enter)
 
     def add_state(self, state):
         """
@@ -201,7 +206,7 @@ class FSM(object):
         assert not isinstance(state, DeadState), 'Invalid argument type'
 
         # We cannot remove state that is current
-        if state == self.current_state:
+        if state == self._current_state:
             raise CannotModifyStateThatIsCurrent
 
         # Remove state from set of states

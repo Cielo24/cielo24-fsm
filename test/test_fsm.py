@@ -17,58 +17,58 @@ class TestFSM(TestCase):
         # States
         self.q0 = State('q0',
                         final=False,
-                        on_enter=partial(TestFSM._fake_callback, self, 1),
-                        on_exit=partial(TestFSM._fake_callback, self, 2),
-                        on_loop_enter=partial(TestFSM._fake_callback, self, 3),
-                        on_loop_exit=partial(TestFSM._fake_callback, self, 4)
+                        on_enter=partial(TestFSM._fake_callback, self, 'q0_on_enter'),
+                        on_exit=partial(TestFSM._fake_callback, self, 'q0_on_exit'),
+                        on_loop_enter=partial(TestFSM._fake_callback, self, 'q0_on_loop_enter'),
+                        on_loop_exit=partial(TestFSM._fake_callback, self, 'q0_on_loop_exit')
                         )
         self.q1 = State('q1',
                         final=True,
-                        on_enter=partial(TestFSM._fake_callback, self, 5),
-                        on_exit=partial(TestFSM._fake_callback, self, 6),
-                        on_loop_enter=partial(TestFSM._fake_callback, self, 7),
-                        on_loop_exit=partial(TestFSM._fake_callback, self, 8)
+                        on_enter=partial(TestFSM._fake_callback, self, 'q1_on_enter'),
+                        on_exit=partial(TestFSM._fake_callback, self, 'q1_on_exit'),
+                        on_loop_enter=partial(TestFSM._fake_callback, self, 'q1_on_loop_enter'),
+                        on_loop_exit=partial(TestFSM._fake_callback, self, 'q1_on_loop_exit')
                         )
         self.q2 = State('q2',
                         final=False,
-                        on_enter=partial(TestFSM._fake_callback, self, 9),
-                        on_exit=partial(TestFSM._fake_callback, self, 10),
-                        on_loop_enter=partial(TestFSM._fake_callback, self, 11),
-                        on_loop_exit=partial(TestFSM._fake_callback, self, 12)
+                        on_enter=partial(TestFSM._fake_callback, self, 'q2_on_enter'),
+                        on_exit=partial(TestFSM._fake_callback, self, 'q2_on_exit'),
+                        on_loop_enter=partial(TestFSM._fake_callback, self, 'q2_on_loop_enter'),
+                        on_loop_exit=partial(TestFSM._fake_callback, self, 'q2_on_loop_exit')
                         )
         self.q3 = State('q3',
                         final=True,
-                        on_enter=partial(TestFSM._fake_callback, self, 13),
-                        on_exit=partial(TestFSM._fake_callback, self, 14),
-                        on_loop_enter=partial(TestFSM._fake_callback, self, 15),
-                        on_loop_exit=partial(TestFSM._fake_callback, self, 16)
+                        on_enter=partial(TestFSM._fake_callback, self, 'q3_on_enter'),
+                        on_exit=partial(TestFSM._fake_callback, self, 'q3_on_exit'),
+                        on_loop_enter=partial(TestFSM._fake_callback, self, 'q3_on_loop_enter'),
+                        on_loop_exit=partial(TestFSM._fake_callback, self, 'q3_on_loop_exit')
                         )
         self.ds = DeadState('ds',
                             final=False,
-                            on_enter=partial(TestFSM._fake_callback, self, 17),
-                            on_loop_enter=partial(TestFSM._fake_callback, self, 18),
-                            on_loop_exit=partial(TestFSM._fake_callback, self, 19)
+                            on_enter=partial(TestFSM._fake_callback, self, 'dead_on_enter'),
+                            on_loop_enter=partial(TestFSM._fake_callback, self, 'dead_on_loop_enter'),
+                            on_loop_exit=partial(TestFSM._fake_callback, self, 'dead_on_loop_exit')
                             )
 
         # Transitions
-        self.q0_a = Transition('a', self.q0, self.q2, on_transition=partial(TestFSM._fake_callback, self, 20))
-        self.q0_b = Transition('b', self.q0, self.q1, on_transition=partial(TestFSM._fake_callback, self, 21))
-        self.q0_c = Transition('c', self.q0, self.q0, on_transition=partial(TestFSM._fake_callback, self, 22))
+        self.q0_a = Transition('a', self.q0, self.q2, on_transition=partial(TestFSM._fake_callback, self, 'q0_a'))
+        self.q0_b = Transition('b', self.q0, self.q1, on_transition=partial(TestFSM._fake_callback, self, 'q0_b'))
+        self.q0_c = Transition('c', self.q0, self.q0, on_transition=partial(TestFSM._fake_callback, self, 'q0_c'))
 
-        self.q1_a = Transition('a', self.q1, self.q1, on_transition=partial(TestFSM._fake_callback, self, 23))
-        self.q1_b = Transition('b', self.q1, self.q3, on_transition=partial(TestFSM._fake_callback, self, 24))
+        self.q1_a = Transition('a', self.q1, self.q1, on_transition=partial(TestFSM._fake_callback, self, 'q1_a'))
+        self.q1_b = Transition('b', self.q1, self.q3, on_transition=partial(TestFSM._fake_callback, self, 'q1_b'))
         # self.q1_c = None
 
         # self.q2_a = None
-        self.q2_b = Transition('b', self.q2, self.q3, on_transition=partial(TestFSM._fake_callback, self, 25))
-        self.q2_c = Transition('c', self.q2, self.q3, on_transition=partial(TestFSM._fake_callback, self, 26))
+        self.q2_b = Transition('b', self.q2, self.q3, on_transition=partial(TestFSM._fake_callback, self, 'q2_b'))
+        self.q2_c = Transition('c', self.q2, self.q3, on_transition=partial(TestFSM._fake_callback, self, 'q2_c'))
 
-        self.q3_a = Transition('a', self.q3, self.q2, on_transition=partial(TestFSM._fake_callback, self, 27))
+        self.q3_a = Transition('a', self.q3, self.q2, on_transition=partial(TestFSM._fake_callback, self, 'q3_a'))
         # self.q3_b = None
-        self.q3_c = Transition('c', self.q3, self.q1, on_transition=partial(TestFSM._fake_callback, self, 28))
+        self.q3_c = Transition('c', self.q3, self.q1, on_transition=partial(TestFSM._fake_callback, self, 'q3_c'))
 
-        # Number
-        self.number = 0
+        # Step stack
+        self.step_stack = []
 
     def _populate_fsm(self, states=True, transitions=True, initial=True, dead=True):
         # States
@@ -110,7 +110,7 @@ class TestFSM(TestCase):
 
     def _fake_callback(self, value):
         # fake callback function to be used to test callbacks in the FSM
-        self.number += value
+        self.step_stack.append(value)
 
     """
     ADD STATE TESTS
@@ -380,8 +380,63 @@ class TestFSM(TestCase):
         self.fsm.add_transition(self.q3_b)
         self.fsm.validate()
 
-
-
     """
     STEP TESTS
     """
+
+    def test_step_regular_sequence(self):
+        self._populate_fsm()
+        self.assertEqual(self.q0, self.fsm.current_state)
+        my_step_stack = []
+
+        # Transition into q1:
+        self.fsm.step('b')
+        my_step_stack.extend(['q0_on_exit', 'q0_b', 'q1_on_enter'])
+        self.assertEqual(self.q1, self.fsm.current_state)
+
+        # Loop into q1:
+        self.fsm.step('a')
+        my_step_stack.extend(['q1_on_loop_exit', 'q1_a', 'q1_on_loop_enter'])
+        self.assertEqual(self.q1, self.fsm.current_state)
+
+        # Transition into q3
+        self.fsm.step('b')
+        my_step_stack.extend(['q1_on_exit', 'q1_b', 'q3_on_enter'])
+        self.assertEqual(self.q3, self.fsm.current_state)
+
+        # Transition into q2
+        self.fsm.step('a')
+        my_step_stack.extend(['q3_on_exit', 'q3_a', 'q2_on_enter'])
+        self.assertEqual(self.q2, self.fsm.current_state)
+
+        # Transition into q3
+        self.fsm.step('c')
+        my_step_stack.extend(['q2_on_exit', 'q2_c', 'q3_on_enter'])
+        self.assertEqual(self.q3, self.fsm.current_state)
+
+        # Transition into dead
+        self.fsm.step('b')
+        my_step_stack.extend(['q3_on_exit', 'dead_on_enter'])
+        self.assertEqual(self.ds, self.fsm.current_state)
+
+        # Loop in dead
+        self.fsm.step('b')
+        my_step_stack.extend(['dead_on_loop_exit', 'dead_on_loop_enter'])
+        self.assertEqual(self.ds, self.fsm.current_state)
+
+        # Let's check how our callbacks performed
+        self.assertListEqual(my_step_stack, self.step_stack)
+
+    def test_step_unknown_symbol(self):
+        self._populate_fsm()
+        with self.assertRaises(AssertionError):
+            self.fsm.step('unknown_symbol')
+
+    def test_step_transition_into_dead(self):
+        self._populate_fsm()
+        self.fsm.step('b')  # Transition into q1
+        self.fsm.step('c')  # Undefined transition
+        self.assertTrue(self.fsm.is_in_dead_state())
+        for symbol in ['a', 'b', 'c']:
+            self.fsm.step(symbol)
+            self.assertTrue(self.fsm.is_in_dead_state())
