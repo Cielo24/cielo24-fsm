@@ -8,11 +8,15 @@ from transition import Transition
 from fsm_exceptions import *
 
 
+class MyFSM(FSM):
+    pass
+
+
 class TestFSM(TestCase):
 
     def setUp(self):
         # FSM (see test_fsm_diagram.png)
-        self.fsm = FSM()
+        self.fsm = MyFSM()
 
         # States
         self.q0 = State('q0',

@@ -4,9 +4,13 @@ from state import State, DeadState
 from transition import Transition
 from fsm_exceptions import *
 
+
 class FSM(object):
 
     def __init__(self):
+        # We are forcing FSM to be "abstract", each FSM instance must be an instance of its subclass
+        assert type(self) is not FSM, 'FSM must be inherited from'
+
         # Set of all states in this FSM
         self._states = set()
 
@@ -314,8 +318,3 @@ class FSM(object):
         if callable(fn):
             fn()
 
-    def to_JSON(self):
-        raise NotImplementedError
-
-    def from_JSON(self, json_str):
-        raise NotImplementedError
