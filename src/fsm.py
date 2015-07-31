@@ -317,4 +317,3 @@ class FSM(object):
         """
         if callable(fn):
             fn()
-

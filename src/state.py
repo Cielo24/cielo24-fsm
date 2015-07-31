@@ -2,6 +2,7 @@
 
 from fsm_exceptions import OnExitNotSupportedInDeadState
 
+
 class State(object):
 
     def __init__(self, id, final=False, on_enter=None, on_exit=None, on_loop_enter=None, on_loop_exit=None):
