@@ -9,5 +9,5 @@ setup(name='cielo24-fsm',
       author='cielo24',
       author_email='support@cielo24.com',
       url='http://www.cielo24.com',
-      packages=['src']
+      packages=['fsm']
       )
