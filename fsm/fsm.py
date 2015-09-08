@@ -55,6 +55,11 @@ class FSM(object):
 
     @property
     def current_state(self):
+        """
+        Gets the current state of the FSM.
+        :return: Current state
+        :rtype: (State|None)
+        """
         if self._current_state:
             return self._current_state
         elif self._initial_state:
@@ -64,14 +69,29 @@ class FSM(object):
 
     @property
     def initial_state(self):
+        """
+        Gets the initial state of the FSM.
+        :return: Initial state
+        :rtype: (State|None)
+        """
         return self._initial_state
 
     @property
     def dead_state(self):
+        """
+        Gets the dead state of the FSM.
+        :return: Dead state
+        :rtype: (State|None)
+        """
         return self._dead_state
 
     @initial_state.setter
     def initial_state(self, value):
+        """
+        Sets the initial state of the FSM.
+        :param value: Initial state
+        :type value: State
+        """
         # Only State objects are accepted
         assert isinstance(value, State), 'Invalid argument type'
         assert value in self._states, 'State not in the set of known states'
@@ -80,6 +100,11 @@ class FSM(object):
 
     @dead_state.setter
     def dead_state(self, value):
+        """
+        Sets the dead state of the FSM.
+        :param value: Dead state
+        :type value: State
+        """
         # Only DeadState or None objects are accepted
         assert value is None or isinstance(value, DeadState), 'Invalid argument type'
         # If FSM is in dead state
@@ -94,19 +119,22 @@ class FSM(object):
 
     def is_dead_state_on(self):
         """
-        :return: True if this FSM contains a dead state. False, otherwise.
+        :return: True if this FSM contains a dead state, False otherwise.
+        :rtype: bool
         """
         return self._dead_state is not None
 
     def is_in_final_state(self):
         """
         :return: True if the current state is final, False otherwise.
+        :rtype: bool
         """
         return self._current_state.final
 
     def is_in_dead_state(self):
         """
-        :return: True if the current state is "dead" state. False, otherwise.
+        :return: True if the current state is "dead" state, False otherwise.
+        :rtype: bool
         """
         return isinstance(self.current_state, DeadState)
 
@@ -115,7 +143,7 @@ class FSM(object):
         Follows a transition corresponding to the given symbol and the current state, into the destination state.
         Throws an exception if the symbol is not in the alphabet.
         :param symbol: Symbol to follow
-        :return:
+        :param symbol: object
         """
         assert symbol in self._alphabet, 'Unknown symbol: {}'.format(symbol)
         # Throw exception if FSM has not been validated (dirty)
@@ -156,7 +184,7 @@ class FSM(object):
         """
         Adds the given state to the FSM. New state must have a unique id, otherwise an error is thrown.
         :param state: State to be added to this FSM.
-        :return:
+        :type state: State
         """
         # State must be 'regular' state
         assert isinstance(state, State), 'Invalid argument type'
@@ -174,7 +202,7 @@ class FSM(object):
         Adds the given transition to the FSM. If the given transition already exists it will be ignored.
         If the given transition contains unknown states, they will automatically be added to the set of states.
         :param transition: Transition to be added to this FSM
-        :return:
+        :type transition: Transition
         """
         assert isinstance(transition, Transition), 'Invalid argument type'
         # Throw error if transition is a duplicate
@@ -203,7 +231,7 @@ class FSM(object):
         Removes the given state from the set of states, removes all corresponding transitions
         from the set of transitions and from the map.
         :param state: State to remove
-        :return:
+        :type state: State
         """
         # State must be 'regular' state
         assert isinstance(state, State), 'Invalid argument type'
@@ -236,7 +264,7 @@ class FSM(object):
         """
         Removes the given transition from the set of transition and the map.
         :param transition: Transition to remove
-        :return:
+        :type transition: Transition
         """
         assert isinstance(transition, Transition), 'Invalid argument type'
         # Remove transition from set of transitions
@@ -251,6 +279,9 @@ class FSM(object):
         self._dirty = True
 
     def validate(self):
+        """
+        Attempts to validate the FSM. Throws errors if the FSM does not satisfy some of the constraints.
+        """
         if self.is_dead_state_on():
             self._validate_with_dead_state()
         else:
@@ -264,7 +295,6 @@ class FSM(object):
         (i.e. constraints required in the "dead" state mode)
         Throws exceptions to indicate the problem.
         'Initial state must belong to the set of states' constraint is enforced in the setter.
-        :return:
         """
         # Set of states must not be empty (otherwise there is no FSM)
         if len(self._states) == 0:
@@ -300,7 +330,6 @@ class FSM(object):
         Checks whether this FSM follows all of the constraints for an ideal FSM.
         Throws exceptions to indicate the problem.
         'Initial state must belong to the set of states' constraint is enforced in the setter.
-        :return:
         """
         # "dead" state mode covers most of the ideal requirements
         self._validate_with_dead_state()
@@ -313,7 +342,7 @@ class FSM(object):
         """
         Helper function.
         :param fn: Callable object that need to be called (if it is actually callable)
-        :return:
+        :param fn: (callable|None)
         """
         if callable(fn):
             fn()
