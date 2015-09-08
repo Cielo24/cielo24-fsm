@@ -244,9 +244,9 @@ class FSM(object):
         # Remove state from set of states
         self._states.remove(state)
         # Remove from map
-        for symbol in self._map.keys():
+        for symbol in list(self._map.keys()):
             inner_dict = self._map[symbol]
-            for src in inner_dict.keys():
+            for src in list(inner_dict.keys()):
                 (dst, _) = inner_dict[src]
                 if src == state or dst == state:
                     # Remove transition from map
